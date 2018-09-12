@@ -66,7 +66,7 @@ const getPlaceSuggestions = memoize(async input => {
     url: `https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${input}&key=${apiKey}`
   });
 
-  return await Promise.all(
+  return Promise.all(
     data.predictions.map(({ place_id }) => place_id).map(getPlaceDetails)
   );
 });
