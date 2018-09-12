@@ -20,9 +20,9 @@ const fetchJSON = pipeP(
   }
 );
 
-const memoizeP = ({ read, write }) => promise => async (...args) => {
+const memoizeP = ({ hash, read, write }) => promise => async (...args) => {
   try {
-    const key = JSON.stringify(args);
+    const key = await hash(args);
     const value = await read(key);
 
     if (value) {
@@ -37,10 +37,11 @@ const memoizeP = ({ read, write }) => promise => async (...args) => {
 };
 
 const inMemory = memory => ({
-  read: key => Promise.resolve(memory[key]),
-  write: (key, value) => {
+  hash: async value => JSON.stringify(value)
+  read: async key => memory[key],
+  write: async (key, value) => {
     memory[key] = value;
-    return Promise.resolve(value);
+    return value;
   }
 });
 
