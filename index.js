@@ -23,26 +23,28 @@ const fetchJSON = pipeP(
 const memoizeP = ({ read, write }) => promise => async (...args) => {
   try {
     const key = JSON.stringify(args);
+    const value = await read(key);
 
-    if (read(key)) {
+    if (value) {
       console.log("from cache", key);
-      return read(key);
+      return value;
     }
 
-    const res = await promise(...args);
-    write(key, res);
-    return res;
+    return write(key, await promise(...args));
   } catch (e) {
     throw e;
   }
 };
 
-const inMemory = (memory) => ({
-  read: (key) => memory[key],
-  write: (key, value) => { memory[key] = value }
-})
+const inMemory = memory => ({
+  read: key => Promise.resolve(memory[key]),
+  write: (key, value) => {
+    memory[key] = value;
+    return Promise.resolve(value);
+  }
+});
 
-const memoize = memoizeP(inMemory({}))
+const memoize = memoizeP(inMemory({}));
 
 const apiKey = process.env.API_KEY;
 
