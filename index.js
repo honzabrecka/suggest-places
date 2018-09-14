@@ -48,6 +48,7 @@ const inMemory = memory => ({
 const memoize = memoizeP(inMemory({}));
 
 const apiKey = process.env.API_KEY;
+const port = process.env.POST || 3005
 
 const getPlaceDetails = memoize(async placeId => {
   const data = await fetchJSON({
@@ -84,6 +85,6 @@ app.get("/suggest/:input", async (req, res) => {
   }
 });
 
-app.listen(process.env.POST || 3005, () => {
-  console.log("App started");
+app.listen(port, () => {
+  console.log(`App started http://localhost:${port}`);
 });
