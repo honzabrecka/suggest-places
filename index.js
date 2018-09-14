@@ -48,7 +48,7 @@ const inMemory = memory => ({
 const memoize = memoizeP(inMemory({}));
 
 const apiKey = process.env.API_KEY;
-const port = process.env.POST || 3005
+const port = process.env.PORT || 3005
 
 const getPlaceDetails = memoize(async placeId => {
   const data = await fetchJSON({
