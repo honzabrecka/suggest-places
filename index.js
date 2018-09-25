@@ -6,19 +6,27 @@ const { composableFetch, pipeP } = require("composable-fetch");
 
 global.Headers = Headers;
 
-const fetchJSON = pipeP(
-  composableFetch.withHeader("Accept", "application/json"),
-  composableFetch.withEncodedBody(JSON.stringify),
-  composableFetch.fetch1(fetch),
-  composableFetch.withSafe204(),
-  composableFetch.decodeJSONResponse,
-  composableFetch.checkStatus,
-  ({ data }) => data,
-  data => {
-    if (data.status !== "OK") throw new Error("Response was not OK");
-    return data;
-  }
-);
+const checkStatus = data => {
+  if (data.status !== "OK") throw new Error("Response was not OK");
+  return data;
+};
+
+const prop = name => o => o[name];
+
+const map = f => functor => functor.map(f);
+
+const then = f => promise => promise.then(f);
+
+const fetchJSON = req =>
+  req
+  |> composableFetch.withHeader("Accept", "application/json")
+  |> composableFetch.withEncodedBody(JSON.stringify)
+  |> composableFetch.fetch1(fetch)
+  |> then(composableFetch.withSafe204())
+  |> then(composableFetch.decodeJSONResponse)
+  |> then(composableFetch.checkStatus)
+  |> then(prop("data"))
+  |> then(checkStatus);
 
 const memoizeP = ({ hash, read, write }) => promise => async (...args) => {
   try {
@@ -48,7 +56,7 @@ const inMemory = memory => ({
 const memoize = memoizeP(inMemory({}));
 
 const apiKey = process.env.API_KEY;
-const port = process.env.PORT || 3005
+const port = process.env.PORT || 3005;
 
 const getPlaceDetails = memoize(async placeId => {
   const data = await fetchJSON({
@@ -62,15 +70,17 @@ const getPlaceDetails = memoize(async placeId => {
   };
 });
 
-const getPlaceSuggestions = memoize(async input => {
-  const data = await fetchJSON({
-    url: `https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${input}&key=${apiKey}`
-  });
-
-  return Promise.all(
-    data.predictions.map(({ place_id }) => place_id).map(getPlaceDetails)
-  );
-});
+const getPlaceSuggestions = memoize(
+  async input =>
+    ({
+      url: `https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${input}&key=${apiKey}`
+    }
+    |> fetchJSON
+    |> then(prop("predictions"))
+    |> then(map(prop("place_id")))
+    |> then(map(getPlaceDetails))
+    |> then(x => Promise.all(x)))
+);
 
 const app = express();
 
