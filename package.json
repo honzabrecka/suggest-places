@@ -14,5 +14,8 @@
   },
   "engines": {
     "node": "^8.11.4"
+  },
+  "scripts": {
+    "postinstall": "babel index.js --out-file build.js"
   }
 }
