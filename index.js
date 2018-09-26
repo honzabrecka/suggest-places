@@ -2,20 +2,20 @@ const express = require("express");
 const cors = require("cors");
 const fetch = require("node-fetch");
 const { Headers } = require("node-fetch");
-const { composableFetch, pipeP } = require("composable-fetch");
+const { composableFetch } = require("composable-fetch");
 
 global.Headers = Headers;
-
-const checkStatus = data => {
-  if (data.status !== "OK") throw new Error("Response was not OK");
-  return data;
-};
 
 const prop = name => o => o[name];
 
 const map = f => functor => functor.map(f);
 
 const then = f => promise => promise.then(f);
+
+const checkStatus = data => {
+  if (data.status !== "OK") throw new Error("Response was not OK");
+  return data;
+};
 
 const fetchJSON = req =>
   req
@@ -71,7 +71,7 @@ const getPlaceDetails = memoize(async placeId => {
 });
 
 const getPlaceSuggestions = memoize(
-  async input =>
+  input =>
     ({
       url: `https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${input}&key=${apiKey}`
     }
@@ -86,9 +86,9 @@ const app = express();
 
 app.use(cors());
 
-app.get("/suggest/:input", async (req, res) => {
+app.get("/suggest/:input", (req, res) => {
   try {
-    res.json(await getPlaceSuggestions(req.params.input));
+    req.params.input |> getPlaceSuggestions |> then(x => res.json(x));
   } catch (e) {
     console.error(e);
     res.status(502).json(e.message);
