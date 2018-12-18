@@ -1,19 +1,19 @@
 {
   "dependencies": {
     "composable-fetch": "^4.1.0",
-    "cors": "^2.8.4",
-    "express": "^4.16.3",
-    "node-fetch": "^2.2.0"
+    "cors": "^2.8.5",
+    "express": "^4.16.4",
+    "node-fetch": "^2.3.0"
   },
   "devDependencies": {
-    "@babel/cli": "^7.1.0",
-    "@babel/core": "^7.1.0",
-    "@babel/plugin-proposal-pipeline-operator": "^7.0.0",
-    "@babel/preset-env": "^7.1.0",
-    "nodemon": "^1.18.4"
+    "@babel/cli": "^7.2.0",
+    "@babel/core": "^7.2.2",
+    "@babel/plugin-proposal-pipeline-operator": "^7.2.0",
+    "@babel/preset-env": "^7.2.0",
+    "nodemon": "^1.18.9"
   },
   "engines": {
-    "node": "^8.11.4"
+    "node": "^10.13.0"
   },
   "scripts": {
     "postinstall": "babel index.js --out-file build.js"
