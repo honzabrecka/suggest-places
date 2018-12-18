@@ -58,9 +58,10 @@ const memoize = memoizeP(inMemory({}));
 const apiKey = process.env.API_KEY;
 const port = process.env.PORT || 3005;
 
-const getPlaceDetails = memoize(async placeId => {
+const getPlaceDetails = memoize(async (placeId, language) => {
+  console.log({ language })
   const data = await fetchJSON({
-    url: `https://maps.googleapis.com/maps/api/place/details/json?placeid=${placeId}&key=${apiKey}`
+    url: `https://maps.googleapis.com/maps/api/place/details/json?placeid=${placeId}&key=${apiKey}&language=${language}`
   });
 
   return {
@@ -71,14 +72,14 @@ const getPlaceDetails = memoize(async placeId => {
 });
 
 const getPlaceSuggestions = memoize(
-  input =>
+  (input, language) =>
     ({
-      url: `https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${input}&key=${apiKey}`
+      url: `https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${input}&key=${apiKey}&language=${language}`
     }
     |> fetchJSON
     |> then(prop("predictions"))
     |> then(map(prop("place_id")))
-    |> then(map(getPlaceDetails))
+    |> then(map((placeId) => getPlaceDetails(placeId, language)))
     |> then(x => Promise.all(x)))
 );
 
@@ -88,7 +89,8 @@ app.use(cors());
 
 app.get("/suggest/:input", (req, res) => {
   try {
-    req.params.input |> getPlaceSuggestions |> then(x => res.json(x));
+    getPlaceSuggestions(req.params.input, req.query.language || "en")
+      |> then(x => res.json(x));
   } catch (e) {
     console.error(e);
     res.status(502).json(e.message);
