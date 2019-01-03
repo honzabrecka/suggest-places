@@ -29,19 +29,15 @@ const fetchJSON = req =>
   |> then(checkStatus);
 
 const memoizeP = ({ hash, read, write }) => promise => async (...args) => {
-  try {
-    const key = await hash(args);
-    const value = await read(key);
+  const key = await hash(args);
+  const value = await read(key);
 
-    if (value) {
-      console.log("from cache", key);
-      return value;
-    }
-
-    return write(key, await promise(...args));
-  } catch (e) {
-    throw e;
+  if (value) {
+    console.log("from cache", key);
+    return value;
   }
+
+  return write(key, await promise(...args));
 };
 
 const inMemory = memory => ({
