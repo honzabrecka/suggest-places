@@ -41,7 +41,10 @@ const memoizeP = ({ hash, read, write }) => promise => async (...args) => {
 const inMemory = memory => ({
   hash: async value => JSON.stringify(value),
   read: async key => memory[key],
-  write: async (key, value) => ({ ...memory, [key]: value })
+  write: async (key, value) => {
+    memory[key] = value;
+    return value;
+  }
 });
 
 const memoize = memoizeP(inMemory({}));
