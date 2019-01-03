@@ -59,16 +59,22 @@ const apiKey = process.env.API_KEY;
 const port = process.env.PORT || 3005;
 
 const getPlaceDetails = memoize(async (placeId, language) => {
-  console.log({ language })
   const data = await fetchJSON({
     url: `https://maps.googleapis.com/maps/api/place/details/json?placeid=${placeId}&key=${apiKey}&language=${language}`
   });
+  return data;
+});
 
-  return {
-    name: data.result.name,
-    addressComponents: data.result.address_components,
-    geometry: data.result.geometry
-  };
+const formatShort = data => ({
+  name: [
+    data.structured_formatting.main_text,
+    data.structured_formatting.secondary_text
+  ]
+});
+
+const formatDetail = data => ({
+  addressComponents: data.result.address_components,
+  geometry: data.result.geometry
 });
 
 const getPlaceSuggestions = memoize(
@@ -78,9 +84,19 @@ const getPlaceSuggestions = memoize(
     }
     |> fetchJSON
     |> then(prop("predictions"))
-    |> then(map(prop("place_id")))
-    |> then(map((placeId) => getPlaceDetails(placeId, language)))
-    |> then(x => Promise.all(x)))
+    |> then(
+      map(async short => [
+        short,
+        await getPlaceDetails(short.place_id, language)
+      ])
+    )
+    |> then(x => Promise.all(x))
+    |> then(
+      map(([short, detail]) => ({
+        ...formatShort(short),
+        ...formatDetail(detail)
+      }))
+    ))
 );
 
 const app = express();
