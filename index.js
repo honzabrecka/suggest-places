@@ -6,8 +6,6 @@ const { composableFetch } = require("composable-fetch");
 
 global.Headers = Headers;
 
-const prop = name => o => o[name];
-
 const map = f => functor => functor.map(f);
 
 const then = f => promise => promise.then(f);
@@ -25,7 +23,7 @@ const fetchJSON = req =>
   |> then(composableFetch.withSafe204())
   |> then(composableFetch.decodeJSONResponse)
   |> then(composableFetch.checkStatus)
-  |> then(prop("data"))
+  |> then(({ data }) => data)
   |> then(checkStatus);
 
 const memoizeP = ({ hash, read, write }) => promise => async (...args) => {
@@ -76,7 +74,7 @@ const getPlaceSuggestions = memoize(
       url: `https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${input}&key=${apiKey}&language=${language}`
     }
     |> fetchJSON
-    |> then(prop("predictions"))
+    |> then(({ predictions }) => predictions)
     |> then(
       map(async short => [
         short,
@@ -98,8 +96,8 @@ app.use(cors());
 
 app.get("/suggest/:input", (req, res) => {
   try {
-    getPlaceSuggestions(req.params.input, req.query.language || "en")
-      |> then(x => res.json(x));
+    const language = req.query.language || "en";
+    getPlaceSuggestions(req.params.input, language) |> then(x => res.json(x));
   } catch (e) {
     console.error(e);
     res.status(502).json(e.message);
