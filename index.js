@@ -45,10 +45,7 @@ const memoizeP = ({ hash, read, write }) => promise => async (...args) => {
 };
 
 const inMemory = memory => ({
-  hash: async ([x, language]) =>
-    JSON.stringify(
-      typeof x === "string" ? [x, language] : [x.place_id, language]
-    ),
+  hash: async value => JSON.stringify(value),
   read: async key => memory[key],
   write: async (key, value) => {
     memory[key] = value;
@@ -61,19 +58,14 @@ const memoize = memoizeP(inMemory({}));
 const apiKey = process.env.API_KEY;
 const port = process.env.PORT || 3005;
 
-const getPlaceDetails = memoize(async (item, language) => {
-  console.log({ item });
+const getPlaceDetails = memoize(async (placeId, language) => {
+  console.log({ language })
   const data = await fetchJSON({
-    url: `https://maps.googleapis.com/maps/api/place/details/json?placeid=${
-      item.place_id
-    }&key=${apiKey}&language=${language}`
+    url: `https://maps.googleapis.com/maps/api/place/details/json?placeid=${placeId}&key=${apiKey}&language=${language}`
   });
 
   return {
-    name: [
-      item.structured_formatting.main_text,
-      item.structured_formatting.secondary_text
-    ],
+    name: data.result.name,
     addressComponents: data.result.address_components,
     geometry: data.result.geometry
   };
@@ -86,7 +78,8 @@ const getPlaceSuggestions = memoize(
     }
     |> fetchJSON
     |> then(prop("predictions"))
-    |> then(map(item => getPlaceDetails(item, language)))
+    |> then(map(prop("place_id")))
+    |> then(map((placeId) => getPlaceDetails(placeId, language)))
     |> then(x => Promise.all(x)))
 );
 
